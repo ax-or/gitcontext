@@ -22,7 +22,8 @@ Managing a single monorepo with several parallel research or development project
 ✔️ Fuzzy branch checkout  
 ✔️ Optional commit squashing  
 ✔️ Custom push flags (`--force`, `--no-verify`, etc.)  
-✔️ Configurable with a simple `project.context` file
+✔️ Configurable with a simple `project.context` file  
+✔️ Full passthrough to regular `git` via `--git` flag
 
 ---
 
@@ -31,8 +32,8 @@ Managing a single monorepo with several parallel research or development project
 ### 🔁 Clone and Install (Editable Dev Mode)
 
 ```bash
-git clone https://github.com/your-username/git-ctx.git
-cd git-ctx
+git clone https://github.com/ax-or/gitcontext.git
+cd gitcontext
 python -m venv venv
 source venv/bin/activate
 pip install --upgrade pip setuptools wheel
@@ -86,6 +87,19 @@ git-ctx push --no-verify
 ```
 
 Supports all dynamic flags: `--force`, `--tags`, `-o ci.skip`, etc.
+
+### 🧩 Git Override Mode
+
+Need to bypass `git-ctx` and run raw git commands?
+
+```bash
+git-ctx --git status
+git-ctx --git log --oneline
+```
+
+This is equivalent to running `git status` or `git log --oneline`, and ignores all context logic.
+
+Perfect when you just want normal git behavior without switching tools.
 
 ---
 

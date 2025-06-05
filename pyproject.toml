@@ -1,6 +1,6 @@
 [project]
 name = "gitcontext"
-version = "0.1.0"
+version = "0.1.1"
 description = "Context-aware git CLI for multi-project research repos with worktree, squash, and fzf support."
 readme = "README.md"
 license = { text = "MIT" }
@@ -36,6 +36,6 @@ ignore = ["E501"]  # ignore long lines
 src = ["git_ctx"]
 
 [project.urls]
-Homepage = "https://github.com/axor-ai/git-ctx"
-Repository = "https://github.com/axor-ai/git-ctx"
-Issues = "https://github.com/axor-ai/git-ctx/issues"
+Homepage = "https://github.com/ax-or/gitcontext.git"
+Repository = "https://github.com/ax-or/gitcontext.git"
+Issues = "https://github.com/ax-or/gitcontext/issues"
