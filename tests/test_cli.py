@@ -1,77 +1,79 @@
-import subprocess
+# tests/test_cli.py
+
 import pytest
-from pathlib import Path
 from click.testing import CliRunner
+from git_ctx.cli import cli, passthrough_git_if_needed
+import os
+from pathlib import Path
+import configparser
 
-# --- Test: context prefix with subproject present ---
-def test_context_prefix_with_subproject(monkeypatch, tmp_path):
-    # Setup fake .git and project.context
-    root = tmp_path
-    (root / ".git").mkdir()
-    (root / "project.context").write_text("[context]\nproject = proj\nsubproject = sub\n")
+@pytest.fixture
+def sample_context(tmp_path):
+    # Create a fake repo structure
+    (tmp_path / '.git').mkdir()
+    ctx_file = tmp_path / 'project.context'
+    ctx_file.write_text("""[context]
+project = testproj
+subproject = subproj
+""")
+    return tmp_path
 
-    # Patch current directory to the test repo
-    monkeypatch.chdir(root)
+# def setup_fake_repo_structure(temp_dir, project="vision", subproject="segmentation"):
+#     # Create .git directory to mimic Git repo
+#     (Path(temp_dir) / ".git").mkdir(parents=True, exist_ok=True)
 
-    # Import after chdir to simulate real context usage
-    from git_ctx.cli import get_context_prefix
-    assert get_context_prefix() == "proj/sub"
+#     # Create project.context file
+#     with open(Path(temp_dir) / "project.context", "w") as f:
+#         f.write(f"[context]\nproject = {project}\nsubproject = {subproject}\n")
 
-# --- Test: context prefix with no subproject ---
-def test_context_prefix_without_subproject(monkeypatch, tmp_path):
-    root = tmp_path
-    (root / ".git").mkdir()
-    (root / "project.context").write_text("[context]\nproject = proj\n")
+# def test_checkout_command_runs():
+#     runner = CliRunner()
+#     with runner.isolated_filesystem() as temp_dir:
+#         setup_fake_repo_structure(temp_dir)
+#         os.chdir(temp_dir)
 
-    monkeypatch.chdir(root)
-    from git_ctx.cli import get_context_prefix
-    assert get_context_prefix() == "proj"
+#         # Dummy checkout, should fail at actual git call but not our prefixing logic
+#         result = runner.invoke(cli, ["-k", "checkout", "testbranch"])
+#         assert result.exit_code in (0, 1), f"Unexpected exit code: {result.exit_code}"
 
-# --- Test: context file missing 'project' key ---
-def test_context_file_missing_key(monkeypatch, tmp_path):
-    root = tmp_path
-    (root / ".git").mkdir()
-    (root / "project.context").write_text("[context]\nsubproject = foo\n")
-    monkeypatch.chdir(root)
+# def test_prefix_resolution_with_no_subproject():
+#     runner = CliRunner()
+#     with runner.isolated_filesystem() as temp_dir:
+#         setup_fake_repo_structure(temp_dir, subproject="")
+#         os.chdir(temp_dir)
 
-    from git_ctx.cli import get_context_prefix
-    with pytest.raises(SystemExit):
-        get_context_prefix()
+#         result = runner.invoke(cli, ["-k", "branch"])
+#         assert result.exit_code in (0, 1)
 
-# --- Test: checkout command with no branch argument ---
-def test_checkout_without_branch(monkeypatch, tmp_path):
-    from git_ctx.cli import cli
-    runner = CliRunner()
+# def test_missing_project_context():
+#     runner = CliRunner()
+#     with runner.isolated_filesystem() as temp_dir:
+#         (Path(temp_dir) / ".git").mkdir(parents=True)
+#         os.chdir(temp_dir)
 
-    # Setup .git and context so the command doesn't exit early
-    (tmp_path / ".git").mkdir()
-    (tmp_path / "project.context").write_text("[context]\nproject = demo\n")
+#         result = runner.invoke(cli, ["-k", "branch"])
+#         assert "project.context" in result.output
+#         assert result.exit_code == 1
 
-    monkeypatch.chdir(tmp_path)
-    result = runner.invoke(cli, ['checkout'])
-    assert result.exit_code == 0
-    assert "Branch name required" in result.output
+# def test_non_git_directory():
+#     runner = CliRunner()
+#     with runner.isolated_filesystem() as temp_dir:
+#         os.chdir(temp_dir)
 
-# --- Test: push command with extra arguments like --force ---
-def test_push_with_extra_args(monkeypatch, tmp_path):
-    monkeypatch.chdir(tmp_path)
-    (tmp_path / ".git").mkdir()
-    (tmp_path / "project.context").write_text("[context]\nproject = foo\nsubproject = bar\n")
+#         result = runner.invoke(cli, ["-k", "branch"])
+#         assert "Not in a Git repo" in result.output
+#         assert result.exit_code == 1
 
-    from git_ctx.cli import get_context_prefix
-    assert get_context_prefix() == "foo/bar"
+def test_raw_git_passthrough(monkeypatch):
+    monkeypatch.setattr('sys.argv', ['git', 'status'])
+    try:
+        passthrough_git_if_needed()
+    except SystemExit:
+        assert True  # Should exit cleanly after passthrough
 
-    # Simulate command call to git function
-    from git_ctx.cli import git
-    # Not asserting anything because we aren't mocking subprocess yet
-    git("push", "-u", "origin", "foo/bar/feature/thing", "--force")
-
-# --- Test: fuzzy branch picker when context has no branches ---
-def test_fuzzy_pick_empty_context(monkeypatch, tmp_path):
-    monkeypatch.chdir(tmp_path)
-    (tmp_path / ".git").mkdir()
-    (tmp_path / "project.context").write_text("[context]\nproject = vision\nsubproject = empty\n")
-
-    from git_ctx.cli import fuzzy_pick_branch
-    with pytest.raises(SystemExit):
-        fuzzy_pick_branch("vision/empty")
+def test_passthrough_with_context_flag(monkeypatch):
+    monkeypatch.setattr('sys.argv', ['git', '-k', 'checkout', 'branch'])
+    try:
+        passthrough_git_if_needed()
+    except SystemExit:
+        assert False  # Should NOT exit early

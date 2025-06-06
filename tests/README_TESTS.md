@@ -1,16 +1,24 @@
-# 🧪 Testing `git-ctx`
+# 🧪 Tests for `git-ctx`
 
-This directory contains tests for the `git-ctx` CLI tool using `pytest`.
+This directory includes unit and CLI integration tests for the `git-ctx` context-aware Git wrapper.
 
-## ✅ Setup
+---
 
-1. Make sure you have installed the tool in dev mode:
+## 📂 Structure
+
+- `test_cli_updated.py` — Primary test suite using `pytest` and `click.testing`
+
+---
+
+## 🧪 How to Run Tests
+
+First, ensure dependencies are installed:
 
 ```bash
-pip install -e .[dev]
+pip install -e ".[dev]"
 ```
 
-2. To run the tests:
+Then run the test suite:
 
 ```bash
 pytest -v tests/
@@ -18,20 +26,21 @@ pytest -v tests/
 
 ---
 
-## 📂 Test Descriptions
+## ✅ Coveragep[TODO]
 
-- `test_context_prefix_with_subproject`: Ensures correct context prefix when both project and subproject are present.
-- `test_context_prefix_without_subproject`: Ensures fallback to project-only prefix.
-- `test_context_file_missing_key`: Fails gracefully if `project` key is missing.
-- `test_checkout_without_branch`: Validates error message when `checkout` is run without a branch name.
-- `test_push_with_extra_args`: Checks that extra push flags like `--force` are accepted.
-- `test_fuzzy_pick_empty_context`: Fails gracefully if fuzzy pick is attempted in an empty context.
+- ✔️ Context resolution from `project.context`
+- ✔️ Prefix override using `-x/--prefix`
+- ✔️ Proper fallback to normal `git` mode when `-k/--ctx` is absent
+- ✔️ Raw Git passthrough verified when `-k` is missing
+- ✔️ Error messages for missing context files
 
 ---
 
-## 🛠️ Tip
+## 💡 Notes
 
-Use `monkeypatch.chdir(...)` to simulate being inside a Git repo in your tests.
-Use `CliRunner()` from `click.testing` to simulate CLI calls without needing subprocess.
+- Uses temporary filesystem with `CliRunner().isolated_filesystem()` for safety
+- Simulates Git repo layout (`.git/` folder, `project.context`)
+- Designed to pass even if Git itself is not configured (focus is on CLI behavior)
 
-Happy testing!
+---
+

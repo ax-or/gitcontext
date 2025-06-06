@@ -1,52 +1,64 @@
-# 🧠 git-ctx
+# 🧠 gitx (`gitx` with `-k` for context)
 
-> A context-aware Git CLI tool for multi-project research repositories.
-
-**`git-ctx`** helps you manage Git branches across multiple projects and subprojects using a smart prefixing system. It wraps common Git commands with context from a `project.context` file, letting you organize branches, worktrees, and workflows efficiently — all while giving you fuzzy selection, squash support, and custom push options.
+> A context-aware Git CLI wrapper for multi-project repositories. Use `gitx -k ...` to activate!
 
 ---
 
-## 🔧 Why `git-ctx`?
+## 💡 Why `gitx -k`?
 
-Managing a single monorepo with several parallel research or development projects often leads to chaos:
-
+In large research or dev repos, you often juggle multiple projects and subprojects. That makes your Git workflow chaotic:
 - Unstructured branch names
-- No context on what belongs to which subproject
-- Tedious git commands when juggling multiple trees
-- Hard to discover or switch branches
+- No clarity which branch belongs to which subproject
+- Tedious checkouts and pushes
 
-`git-ctx` fixes this by introducing:
-
-✔️ Context-based branch prefixing  
-✔️ Clean worktree integration  
-✔️ Fuzzy branch checkout  
-✔️ Optional commit squashing  
-✔️ Custom push flags (`--force`, `--no-verify`, etc.)  
-✔️ Configurable with a simple `project.context` file  
-✔️ Full passthrough to regular `git` via `--git` flag
+`gitx` introduces a **context system** using a `project.context` file. It wraps normal Git commands to:
+- ✅ Automatically prefix branch names with project/subproject
+- 🔍 Let you fuzzy-pick branches with `fzf`
+- 🌳 Work smoothly inside worktrees
+- 💥 Bypass with regular Git anytime
 
 ---
 
-## 📦 Installation
+## 🚀 How It Works
 
-### 🔁 Clone and Install (Editable Dev Mode)
+You just add `-k` (or `--ctx`) to any `gitx` command to enable the context mode:
+```bash
+gitx -k checkout mybranch     # Resolves to: project/subproject/mybranch
+gitx -k push                  # Pushes current context-prefixed branch
+gitx -k branch                # Lists branches in current context
+```
+
+To fallback to normal git:
+```bash
+gitx status                   # Regular Git
+gitx -k status                # Also regular Git (noop)
+```
+
+---
+
+## 📂 Setup
+
+### 🔁 Install in Dev Mode
 
 ```bash
-git clone https://github.com/ax-or/gitcontext.git
+git clone https://github.com/ax-or/gitcontext
 cd gitcontext
 python -m venv venv
 source venv/bin/activate
-pip install --upgrade pip setuptools wheel
 pip install -e ".[dev]"
 ```
 
-> 🛠️ `click`, `pytest`, `ruff`, `black`, and `pre-commit` will be installed if you use `[dev]`.
+Then, `gitx` is ready to use.
+You can further make your git to point to gitx
+```bash
+alias git=gitx
+```
 
 ---
 
-## 📂 `project.context` Format
+## 📄 `project.context` Format
 
-At the root of your Git repo, add:
+At the root of your repo, define the context:
 
 ```ini
 [context]
@@ -54,176 +66,65 @@ project = vision
 subproject = segmentation
 ```
 
-If you don't have a subproject:
-
+If no subproject:
 ```ini
 [context]
 project = vision
 ```
 
-This will prefix your branches like:
+Your branch names will automatically be prefixed:
 - `vision/main`
 - `vision/segmentation/feature-x`
 
 ---
 
-## 🚀 Usage
-
-### 🧱 Branch Management
+## ⚙️ Supported Commands
 
 ```bash
-git-ctx create feature/transformer-rewrite         # Creates vision/segmentation/feature/transformer-rewrite
-git-ctx checkout bugfix/loss-calc                  # Checks out vision/segmentation/bugfix/loss-calc
-git-ctx checkout --pick                            # Pick interactively using fzf
-git-ctx branch                                     # List all local branches under current context
-git-ctx fetch                                      # Fetch only branches under current context
+gitx -k checkout feature/xyz        # Checkout branch in context
+gitx -k checkout --pick             # Fuzzy pick
+gitx -k create new-feature          # Create context branch
+gitx -k push --force-with-lease     # Push current branch
+gitx -k branch                      # List context branches
+gitx -k fetch                       # Fetch remote branches under context
 ```
 
-### 📤 Pushing with Flags
+---
+
+## 🔍 Requirements
+
+- Python 3.8+
+- `fzf` (for interactive mode)
+
+---
+
+## 🔬 Testing
 
 ```bash
-git-ctx push --force-with-lease
-git-ctx push --no-verify
-```
-
-Supports all dynamic flags: `--force`, `--tags`, `-o ci.skip`, etc.
-
-### 🧩 Git Override Mode
-
-Need to bypass `git-ctx` and run raw git commands?
-
-```bash
-git-ctx --git status
-git-ctx --git log --oneline
-```
-
-This is equivalent to running `git status` or `git log --oneline`, and ignores all context logic.
-
-Perfect when you just want normal git behavior without switching tools.
-
----
-
-## 🧼 Squash Support (Coming Soon)
-
-```bash
-git-ctx squash --base main --autosquash --push --force-with-lease
-```
-
-Allows selective squashing of commits before pushing or PR. Ideal for keeping research commits clean and minimal.
-
----
-
-## 🌳 Worktree-Friendly
-
-`git-ctx` works seamlessly inside Git worktrees. Just navigate into any worktree, and it’ll resolve context and branches as expected.
-
----
-
-## 🧪 Testing
-
-### Run all tests:
-
-```bash
-pytest -v tests/
-```
-
-### Structure:
-- `tests/test_cli.py`: unit tests for prefix logic, branch creation, error handling, etc.
-- Uses `pytest` and `click.testing.CliRunner`
-- Simulates fake `.git` repos and project contexts
-
----
-
-## 🎯 Linting & Dev Workflow
-
-```bash
-ruff git_ctx
-black git_ctx
-pre-commit run --all-files
-```
-
-Pre-commit hooks are available if you install via `[dev]`.
-
----
-
-## 🔌 Integration with `fzf`
-
-Fuzzy branch selection relies on [fzf](https://github.com/junegunn/fzf):
-
-```bash
-# Install on macOS:
-brew install fzf
-
-# On Ubuntu:
-sudo apt install fzf
+pytest tests/
 ```
 
 ---
 
-## 🔐 Permissions & Safe Defaults
+## 🧪 Future Features
 
-- Only works inside a Git repo with `project.context`
-- Prevents accidental checkout or push outside scope
-- Outputs all Git commands it runs
-
----
-
-## 📁 Example Branch Structure
-
-If you're working on:
-
-```ini
-[context]
-project = nlp
-subproject = textgen
-```
-
-Then branches will look like:
-
-```
-nlp/textgen/main
-nlp/textgen/feature/streaming
-nlp/textgen/bugfix/gpu-crash
-```
-
-No more guessing where a branch belongs. 🍷
-
----
-
-## 🤖 Planned Features
-
-- [ ] Interactive squash flow
-- [ ] Worktree manager: `git-ctx worktree add --branch xxx`
-- [ ] Dashboard: `git-ctx status` across contexts
-- [ ] Cross-context search and branch management
-- [ ] GitHub PR integration (open PR from CLI)
-
----
-
-## 🛠 Developer Setup
-
-```bash
-pip install -e ".[dev]"
-pre-commit install
-pytest -v
-```
-
-> Want to contribute? Open an issue or drop a PR with your idea 💡
+- [ ] Commit squashing with autosquash
+- [ ] `gitx -k squash` flow
+- [ ] GitHub PR integration
+- [ ] `gitx -k worktree add`
+- [ ] Cross-context dashboard
 
 ---
 
 ## 📜 License
 
-MIT © [AxOr](https://axiomsandorbits.xyz)  
-Built for clarity, context, and collaborative chaos management 🧠⚙️
+MIT © [AxOr](https://axiomsandorbits.xyz)
 
 ---
 
-## ⭐️ Contribute & Share
+## ⭐️ Contribute
 
-If you find this tool useful:
-- Star 🌟 the repo
-- Share it with your team
-- File feature requests or bug reports
-
-Together, we can make Git suck less for research work. 😎
+If you find this useful:
+- Star the repo ⭐️
+- Share it
+- File issues and ideas 🧠
